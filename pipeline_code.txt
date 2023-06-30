@@ -1,0 +1,156 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('git') {
+            steps {
+                git 'https://github.com/RudaliPawar/newnew.git'
+            }
+        }
+        stage('Build'){
+            steps{
+                //build docker images
+                sh 'docker build -t rudalipawar/rudali:a .'
+            }
+        }
+     
+     
+        stage('Login'){
+            steps{
+                sh 'docker login -u rudalipawar -p dckr_pat_Gxs1UwNDumG-WaoqahxokiY6LtQ'
+            }
+                
+        }
+    
+        stage('Push'){
+            steps{
+                sh 'docker push rudalipawar/rudali:a'
+            }
+        }
+
+        
+        stage('leader operation'){
+            steps{
+                sshPublisher(publishers: [sshPublisherDesc(configName: 'leader', transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand: '''docker login -u rudalipawar -p dckr_pat_Gxs1UwNDumG-WaoqahxokiY6LtQ
+docker pull rudalipawar/rudali:a
+docker service rm demo
+docker service create --name demo -p 80:80 --replicas 3 rudalipawar/rudali:a''', execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: '', remoteDirectorySDF: false, removePrefix: '', sourceFiles: '')], usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false)])
+                
+            }
+        }
+            
+        
+    }
+}
+
+
+=====================================================================================================
+pipeline {
+    agent any
+
+    stages {
+        stage('Hello') {
+            steps {
+                echo 'Hello World'
+            }
+        }
+        stage('git') {
+            steps {
+                git 'https://github.com/Aniket89598/aniket.git'
+            }
+        }
+        stage('build') {
+            steps {
+                sh "docker login -u aniket89598 -p dckr_pat_mzqy8DeUsi5Nf0DxEcypldjFIWw"
+				sh "docker build -t aniket89598/demo:latest ."
+				sh "docker push aniket89598/demo:latest"
+            }
+        }
+        stage('ssh') {
+            steps {
+              sshPublisher(publishers: [sshPublisherDesc(configName: 'server', transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand: '''docker login -u aniket89598 -p dckr_pat_mzqy8DeUsi5Nf0DxEcypldjFIWw
+docker stop test
+docker rm test
+docker pull aniket89598/demo:latest
+docker run -d --name test -p 8080:80 aniket89598/demo:latest''', execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: '', remoteDirectorySDF: false, removePrefix: '', sourceFiles: '')], usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false)])
+            }
+        }
+		stage('mail') {
+            steps {
+                mail bcc: '', body: 'bye', cc: '', from: '', replyTo: '', subject: 'hii', to: 'kuldeeppatelss2023@gmail.com'
+            }
+        }
+    }
+}
+
+================================================================================================================================
+pipeline {
+    agent any
+
+    stages {
+        stage('Hello') {
+            steps {
+                echo 'welcome'
+            }
+        }
+        stage('git') {
+            steps {
+                git 'https://github.com/chinmay-ghate/revision1.git'
+            }
+        }
+        stage('build:httpd') {
+            steps {
+                sh 'docker build -t chinmayghate/httpd:latest .'
+            }
+        }
+        stage('login') {
+            steps {
+                sh 'docker login -u chinmayghate -p dckr_pat_YcxSQ4E4dN4wEqTE8Jeq1RJCiiY'
+            }
+        }
+        stage('push_httpd') {
+            steps {
+                sh '''docker push chinmayghate/httpd:latest
+'''
+            }
+        }
+        stage('nginx_all') {
+            steps {
+                sh '''docker build -t chinmayghate/nginx:latest .
+docker login -u chinmayghate -p dckr_pat_YcxSQ4E4dN4wEqTE8Jeq1RJCiiY
+docker push chinmayghate/nginx:latest
+'''
+            }
+        }
+        stage('all-postbuild') {
+            steps {
+                sshPublisher(publishers: [sshPublisherDesc(configName: 'client', transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand: '''docker login -u chinmayghate -p dckr_pat_YcxSQ4E4dN4wEqTE8Jeq1RJCiiY
+
+docker pull chinmayghate/httpd:latest
+docker service stop final
+docker service rm final 
+docker service create --name final -p 80:80 --replicas 2 chinmayghate/httpd:latest
+
+docker pull chinmayghate/nginx:latest
+docker service stop final2
+docker service rm final2 
+docker service create --name final2 -p 8080:80 --replicas 2 chinmayghate/nginx:latest''', execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: '', remoteDirectorySDF: false, removePrefix: '', sourceFiles: '')], usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false)])
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

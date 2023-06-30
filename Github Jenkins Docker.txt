@@ -1,0 +1,401 @@
+Github Jenkins Docker
+
+Add files to github repo using ec2 instance: required github and deb machine (local machine)
+
+first create repo in github
+now open deb:
+	sudo apt-get update
+	sudo apt-get install git
+	mkdir new
+	cd new
+	ls -a
+	git init
+	ls -a
+	ssh-keygen 
+	(/home/shuhari/.ssh/id_rsa.pub) copy this 
+	cat /home/shuhari/.ssh/id_rsa.pub paste here
+	copy generated key and paste to github -> deploy key
+	git remote add origin "git@github.com:rahooolveer/new.git" ("copy path of github-> code-> ssh")
+	git pull origin master
+	ls -l
+	nano new.sh and nano Dockerfile
+		Dockerfile : FROM httpd:latest
+			     Copy index.html /usr/local/apache2/htdocs
+			     Expose 80
+	
+	chmod 777 new.sh and Dockerfile
+	git add .
+	git status
+	git commit -a -m "updated"
+	git config --global user.email "email"
+	git config --global user.name "name"
+	git config pull.rebase true ------------->basically used for apply latest changes.
+	git push origin master
+	now check on github. updated files will be there.
+	
+
+************************************************************************************************************************
+github to jenkins
+
+for jenkins:
+
+Create ec2 instance for jenkins
+open on putty
+
+sudo apt-get update
+nano jenkins.sh
+chmod 777 jenkins.sh
+sudo ./jenkins.sh
+
+copy this : 
+apt-get update -y
+apt-get upgrade -y
+sudo apt-get install git -y
+sudo apt-get install docker.io -y
+apt-get install gnupg -y
+apt-get install default-jre -y
+curl -fsSL https://pkg.jenkins.io/debian/jenkins.io-2023.key | sudo tee \
+    /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
+    https://pkg.jenkins.io/debian binary/ | sudo tee \
+    /etc/apt/sources.list.d/jenkins.list > /dev/null
+apt update -y
+apt-get install jenkins -y
+sudo usermod -a -G root jenkins
+systemctl status jenkins
+active running and then cntrl Z
+copy same putty pub ip:8080 (jenkins port no 8080) and browse
+copy red line and paste on local machine : sudo cat paste here
+copy sha values and paste on browser. download plugins
+username and pass and email finish
+then copy link (http://54.86.108.9:8080/) and paste to github->webhook->http://54.86.108.9:8080/github-webhook/ -> appctn jason done -green required.
+
+now here you connected your github to jenkins.
+
+
+now in jenkins :
+		new itm ->freestyl-> github project -paste prjct url of github hhtps(https://github.com/rahooolveer/new.git) ->git (paste same url in repo url section) -> github hook triggr ->add timestamp -> build step ->execute shell - cat Dockerfile.
+
+now open ec2 instance where jenkins.sh
+nano Dockerfile
+git add .
+git commit -a -m "latest"
+git push origin master
+
+
+now check in github and jenkins web files succesfully pushed and build on jenkins.
+
+
+*******************************************************************************************************************
+Jenkins to dockerhub(master/client/docker swarm leader)
+
+#putty jenkins
+sudo apt-get install docker.io
+sudo chown -R jenkins.jenkins /etc/docker/
+sudo chown -R jenkins.docker /var/run/docker.sock
+docker pull httpd
+
+#execute shell jenkins
+docker build -t chinmayghate/httpd:latest
+docker login -u chinmayghate -p (token-docker)
+docker push chinmayghate/httpd:latest
+
+#passwordless ssh (jenkins to docker m/c) jen putty:-
+su jenkins
+cd .ssh
+cat id_rsa.pub
+copy and paste it in authorized_keys of docker m/c
+ssh admin@(pvt ip of docker m/c)
+
+#go to jenkins dashboard
+install plugins
+1.publish over ssh
+2.docker
+
+manage jenkins -system -end- publish over ssh- key -(paste here pvt key of jenkins (is_rsa))-add-ssh servers-
+name-deb(any)
+hostname -(paste pvt ip of docker)
+username-admin
+test-apply- save
+
+#go to dashboard
+project-configure-post build actions-dend build artifacts-exe command-
+
+docker login -u chinmayghate -p (token-dockerhub)
+docker pull chinmayghate/httpd:latest
+\\docker stop exam
+\\docker rm exam
+docker run -d --name exam -p 80:80 chinmayghate/httpd
+
+#go to docker m/c
+sudo apt-get update
+sudo apt-get install docker.io -y
+sudo chown -R admin.admin /etc/docker
+sudo chown -R admin.docker /var/run/docker.sock
+
+docker images
+docker ps -a
+ paste ip with port no in browser
+
+*********************************************************************************************************************
+
+How to install default apache in docker?
+ (need output "IT WORKS")
+after completing below commands,
+browse->pubip:1010
+
+create ec2 instance (name:docker)
+open in putty
+
+sudo apt-get update
+sudo apt-get install docker.io
+which docker
+docker --version
+sudo docker images
+sudo docker pull httpd
+sudo docker images
+sudo ps -a
+sudo docker run -d --name iacsd -p 1010:80 httpd
+sudo docker ps -a
+
+
+*********************************************************************************************************************
+
+
+Q Run apache via docker file
+	(need output after browsing pubip:port ->hi hello)
+
+create ec2 instance
+
+sudo apt-get update
+mkdir cdac
+cd mkdir
+nano index.html
+#Hi Hello
+nano Dockerfile
+#FROM httpd:latest
+#COPY index.html /usr/local/apache2/htdocs
+#EXPOSE 80
+sudo docker build -t httpd .#(-t demo:latest)
+sudo docker run -d --name cdac -p 2020:80 httpd #(2020:80 demo:latest) build kartanaje image name asel tech continue tech
+
+#now browse pubip:2020 output is hi hello.
+
+#jar next time la build -t kartana image name change keli aani run kartana port number change kela tr same ip n diff port number asun sudha output same yet
+
+EX:sudo docker build -t demo latest
+   sudo docker run -d --name cdac -p 3030:80 demo:latest
+brws:pubip:3030
+op->hi hello  
+
+
+*********************************************************************************************************************** 
+
+Install apache2 in ubuntu using docker
+
+sudo docker pull ubuntu
+nano index.html
+#good morning
+nano Dockerfile
+#FROM ubuntu
+#RUN apt-get update
+#RUN apt-get install -y apache2
+#RUN rm /var/www/html/index.html
+#COPY index.html /var/www/html
+#EXPOSE 80
+#CMD apachectl -D FOREGROUND
+
+sudo docker build -t ubuntu .
+sudo docker run -d --name ubuntu -p 4040:80 ubuntu
+
+browse pubip:4040
+op ->good morning
+
+same like above for changing port and output will be same.
+
+
+
+NOW FOR nginx
+
+same process 
+
+sudo docker pull nginx
+nano index.html
+nano Dockerfile
+	FROM nginx:latest
+	COPY index.html /usr/share/nginx/html
+	EXPOSE 80
+same process for httpd image
+
+FROM httpd:latest
+COPY index.html /usr/local/apache2/htdocs
+EXPOSE 80
+
+**********************************************************************************************************************
+
+now using docker, trasfer image on dockerhub:
+
+Here we consider ec2 instance is ready and have one of any docker image. here we consider ubuntu image
+ 
+for transfering file on dockerhub we need pre pulled image on docker like httpd,nginx,ubuntu etc
+
+firstly create repository in dockerhub.
+(ex:kaustubhveer/demo)
+
+sudo docker images (need image)
+
+now login to dockerhub
+
+sudo docker login
+username :kaustubhveer
+pass:    Kaustubh06@06
+login sucessfull
+
+
+sudo docker tag ubuntu:latest kaustubhveer/dockerr
+sudo docker images
+#we can see kaustubhveer/dockerr
+
+#now we push this to dockerhub
+
+sudo docker push kaustubhveer/dockerr
+
+then go to dockerhub web page and check repository.
+
+image sucessfully transfered to dockerhub
+
+**************************************************************************************************************
+Dockerswarm: Connecting images from client/leader/master to nodes
+		It means that allow user to manage multiple container deployed across multiple host machines.
+
+
+req: need two or more ec2 instances
+	one is for leader and all others are nodes.
+
+ec2-1 (client/leader/master)
+	sudo apt-get update
+	sudo apt-get install docker.io
+	sudo docker swarm init ---------now this becomes leader & copy token
+	mkdir max
+	cd max
+	nano index.html #hi good night
+	nano Dockerfile	#FROM COPY EXPOSE 80
+	sudo docker pull httpd
+	sudo docker node ls ------------shows how many nodes connected to leader
+	sudo docker images -----------need any image
+	sudo docker login
+	username:username of dockerhub
+	password:dockerhubs password
+	sucessfully login
+	
+	sudo docker build -t kaustubhveer/max1:max1 .
+	sudo docker images #kaustubhveer/max1
+	sudo docker push kaustubhveer/max1:max1 #now check on dockerhub web page (automatic repo create)
+	sudo docker service create --name max1 -p 2222:80 --replicas 2 kaustubhveer/max1:max1
+	
+	now check on browser pubip:80
+
+ec2(2):
+	sudo apt-get update
+	sudo apt-get install docker.io
+	sudo docker images #need kaustubhveer/max1 image here in node
+	
+	browse pubip:2222 #hi good night
+
+
+********************************************************************************************************************
+apache task -
+git -github-jenkins-client docker showing apache
+
+#jenkins putty
+sudo passwd jenkins
+sudo su jenkins
+ssh-keygen
+cd .ssh
+cat id_rsa_pub -(copy key and paste it in apache authorized keys)
+
+#apache putty
+sudo apt-get install apache2
+cd /var/www/html/
+rm -r index.html
+sudo chmod -R 7777 /var/www/html/-> remove file from folder
+
+jenkins putty-
+ssh admin@(apache pvt ip)
+exit
+make index.html & write 
+
+scp index.html admin@(apache ip):/var/www/html
+
+paste apache ip in browser(pub)
+
+after that  delete index.html file from jenkins 
+and add scp command to execute shell in freestyle project
+
+git -edit-add-commit-push -see output in apache public ip
+ 
+git -github- jenkins-apache-browser (done)
+=======================================================================================
+	
+#s3 bucket web hosting
+tutorial to config static website on aws-
+bucket policy edit
+======================================================================================
+vpc-
+make 1 pvt instance -.pem key-private subnet
+make 1 public instance -.ppk key- public subnet-auto assign public ip enabled
+
+launch 
+open pub instance 
+nano key 
+copy .pem key of pvt m/c in it
+chmod 400 key 
+
+ssh -i key admin@(pvt ip )
+login 
+update 
+install apache2
+delete and create index file and write 
+exit 
+
+pub m/c
+update install links
+
+-curl (pvt ip)
+-links(pvt ip)
+
+=========================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+
+
+
+
+
+
